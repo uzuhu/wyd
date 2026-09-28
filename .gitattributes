@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# CNAME must stay LF-only; CRLF breaks GitHub Pages custom domain detection
+CNAME text eol=lf
