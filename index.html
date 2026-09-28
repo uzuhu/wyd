@@ -9,7 +9,10 @@
   *{box-sizing:border-box}
   body{margin:0;background:#f2f5f7;color:var(--ink);
     font:15px/1.6 "Microsoft YaHei","PingFang SC","Hiragino Sans GB",sans-serif}
-  .wrap{max-width:900px;margin:0 auto;padding:16px 14px 40px}
+  /* 屏幕宽度对齐 A4 横向的打印内容宽度：297mm - 2×11mm = 275mm。
+     再补上本层左右各 14px 的 padding，使屏幕上的卡片宽度 = 打印时的卡片宽度，
+     达到所见即所得。打印时 @media print 会把 max-width 归零，此值不参与排版。 */
+  .wrap{max-width:calc(275mm + 28px);margin:0 auto;padding:16px 14px 40px}
   h1{font-size:20px;margin:0 0 12px}
   .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:12px}
   .row{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end}
