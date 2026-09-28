@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>万屿达投料机 · 管道用量与布置</title>
+<style>
+  :root{--ink:#16232c;--sub:#6d7f8a;--line:#dde6eb;--p3:#2f8f5b;--p4:#2b6cb0;--bad:#c0392b;}
+  *{box-sizing:border-box}
+  body{margin:0;background:#f2f5f7;color:var(--ink);
+    font:15px/1.6 "Microsoft YaHei","PingFang SC","Hiragino Sans GB",sans-serif}
+  .wrap{max-width:900px;margin:0 auto;padding:16px 14px 40px}
+  h1{font-size:20px;margin:0 0 12px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:12px}
+  .row{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end}
+  .fld label{display:block;font-size:12px;color:var(--sub);margin-bottom:4px}
+  input[type=number],select{padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:16px;background:#fff}
+  input[type=number]{width:92px}
+  input[type=range]{width:170px}
+  button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 16px;cursor:pointer;font-size:14px}
+  button.pri{background:#1f6feb;border-color:#1f6feb;color:#fff}
+  .vals{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .vals label{display:inline-flex;align-items:center;gap:4px;margin:0;padding:5px 10px;border:1px solid var(--line);
+    border-radius:20px;font-size:14px;color:var(--ink);cursor:pointer;background:#fbfdfe}
+  .vals label.on{background:#eaf2ff;border-color:#1f6feb;color:#1f6feb;font-weight:700}
+  .vals input{width:auto;margin:0}
+  .vals .cu{width:64px;padding:4px 6px;font-size:13px;border-radius:6px}
+  .pipes{display:flex;align-items:baseline;gap:2px 18px;flex-wrap:wrap}
+  .pipes .n{font-size:44px;font-weight:700;line-height:1.1}
+  .pipes .n small{font-size:18px;font-weight:400;color:var(--sub);margin-left:4px}
+  .pipes .mix{font-size:19px}
+  .pipes .mix .t3{color:var(--p3);font-weight:700}
+  .pipes .mix .t4{color:var(--p4);font-weight:700}
+  .pipes .len{flex:0 0 100%;font-size:13.5px;color:var(--sub)}
+  /* 汇总行：一个大数字 + 两行说明 */
+  .sum{display:flex;align-items:baseline;gap:2px 20px;flex-wrap:wrap}
+  .sum .n{font-size:42px;font-weight:700;line-height:1.05}
+  .sum .n small{font-size:17px;font-weight:400;color:var(--sub);margin-left:5px}
+  .sum .m{font-size:19px}
+  .sum .m .t3{color:var(--p3);font-weight:700}
+  .sum .m .t4{color:var(--p4);font-weight:700}
+  .sum .m .cut{color:#9a6b1f;font-weight:700}
+  .sum .l{flex:0 0 100%;font-size:13.5px;color:var(--sub)}
+  #plan .l{font-size:12.5px;color:var(--sub);margin-top:4px;line-height:1.5;
+    padding-left:12px;text-indent:-12px}
+  #plan .l b{color:#42525c}
+  #plan .g3{color:#2f8f5b;font-weight:700}
+  #plan .g4{color:#2b6cb0;font-weight:700}
+  #plan .chip{display:inline-block;width:4px;height:13px;border-radius:2px;
+    margin-right:6px;vertical-align:-1px}
+  .tip{flex:0 0 100%;font-size:13px;color:#8a5a12;background:#fffaef;border:1px solid #f0dfb8;
+    border-radius:8px;padding:5px 9px;margin-top:2px}
+  .tip b{color:#7a4d06}
+  .tip a{color:#1f6feb;cursor:pointer;text-decoration:underline}
+  .err{color:var(--bad);font-size:14px;line-height:1.9}
+  .err b{color:var(--bad)}
+
+  h2{font-size:15px;margin:0 0 9px}
+  svg{width:100%;height:auto;display:block}
+  .note{font-size:12.5px;color:var(--sub);margin-top:7px}
+  #phead{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;
+    border-bottom:2px solid var(--ink);padding-bottom:6px;margin-bottom:0}
+  #phead .t{font-size:19px;font-weight:700}
+  #phead .m{font-size:13px;color:var(--sub);text-align:right}
+  h2 .tag{font-size:12.5px;font-weight:400;color:var(--sub);margin-left:6px}
+  /* 总结块：绿框，和上面的图分开 */
+  #cardShip{border:2px solid #2f8f5b;background:#fcfffd}
+  #cardShip h2{color:#1c6b45}
+  /* 页边距用 body 内边距定死 11mm，不靠 @page 的 margin：
+     打印对话框里选了「无 / 最小」或缩放不是 100% 时，@page 的 margin 会被忽略或被吃掉 */
+  @page{size:A4 landscape;margin:0}
+  @media print{
+    body{background:#fff;font-size:10.5pt;padding:11mm}
+    .noprint{display:none!important}
+    .wrap{max-width:none;padding:0;margin:0}
+    h1{display:none}
+    .card{border-color:#bbb;break-inside:avoid;page-break-inside:avoid;margin-bottom:0;padding:5px 9px}
+    h2{margin-bottom:3px;font-size:12.5pt}
+    .sum{gap:1px 18px}
+    .sum .n{font-size:26pt}
+    .sum .n small{font-size:12pt}
+    .sum .m{font-size:14pt}
+    .sum .l{font-size:10pt}
+    #plan .l{font-size:9pt;margin-top:1px}
+    .tip{font-size:9.5pt;padding:3px 6px}
+    .note{margin-top:3px;font-size:9pt}
+    #phead{display:flex;justify-content:space-between;align-items:baseline;
+      border-bottom:2px solid #16232c;padding-bottom:3px;margin-bottom:4px}
+    #phead .t{font-size:15pt;font-weight:700}
+    #phead .m{font-size:10.5pt;color:#42525c;text-align:right}
+    h2 .tag{font-size:9pt;margin-left:6px}
+    #cardShip{border-width:1.5px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>万屿达投料机 · 管道用量与布置</h1>
+
+<div class="card noprint">
+  <div class="row">
+    <div class="fld">
+      <label>小棚长度（米）</label>
+      <input type="number" id="L" value="40" min="10" max="80" step="0.5">
+    </div>
+    <div class="fld">
+      <label>小棚宽度（米）</label>
+      <input type="number" id="W" value="9" min="4" max="16" step="0.5">
+    </div>
+    <div class="fld">
+      <label>棚数（个）</label>
+      <input type="number" id="qty" value="1" min="1" max="999" step="1">
+    </div>
+    <div class="fld">
+      <label>喷头配置</label>
+      <select id="cfg"></select>
+    </div>
+    <div class="fld">
+      <label>距棚两头（米）</label>
+      <input type="number" id="end" value="2" min="0" max="5" step="0.1">
+    </div>
+    <div class="fld">
+      <label title="程序在这个范围内自动挪端距（0.1 米一档），挑最省料、最少接头的那一档。填 0 = 锁定不挪。">自动微调 ±（米）</label>
+      <input type="number" id="endTol" value="0.3" min="0" max="1" step="0.1">
+    </div>
+    <div class="fld">
+      <label>管道</label>
+      <select id="stock">
+        <option value="mix">自动</option>
+        <option value="3">3米</option>
+        <option value="4">4米</option>
+      </select>
+    </div>
+    <div class="fld">
+      <label>喷头间距</label>
+      <select id="gmode">
+        <option value="fix" selected>固定切长</option>
+        <option value="even">均距（最齐）</option>
+        <option value="cut">齐料（最省）</option>
+      </select>
+    </div>
+    <div class="fld">
+      <label>引管（米）</label>
+      <input type="number" id="lead" value="5" min="1" max="10" step="0.5">
+    </div>
+  </div>
+  <div class="row" style="margin-top:12px">
+    <div class="fld" id="fldTol" style="display:none">
+      <label title="齐料 = 优先让每根管只裁两刀、整根用完（3m 管切 1+2 或 1.5+1.5，4m 管切 2+2 或 1+3）。允许误差越大越容易凑整刀，实测加宽不费料、不多接头，只是间距更不整齐。">允许误差 ±（米）</label>
+      <input type="number" id="tol" value="0.5" min="0.1" max="1" step="0.1">
+    </div>
+    <div class="fld" id="fldVals" style="flex:1">
+      <label>固定切长（可多选）＝ 裁出来的管长</label>
+      <div class="vals" id="vals"></div>
+    </div>    <div class="fld">
+      <label>&nbsp;</label>
+      <button class="pri" id="btnPrint" title="打印对话框里要选：纸张方向「横向」· 缩放 100%（不要「适应页面」）· 取消勾选「页眉和页脚」；页边距本页面已定死 11 毫米">打印下料单（A4 横向）</button>
+    </div>
+  </div>
+</div>
+
+<div class="card" id="phead"></div>
+
+<div class="card" id="cardPlan">
+  <h2>布置图 <span class="tag" id="planTag"></span></h2>
+  <div id="plan"></div>
+  <div class="note" id="plannote"></div>
+</div>
+
+<div class="card" id="cardOne">
+  <h2>一个棚需要 <span class="tag" id="oneTag"></span></h2>
+  <div class="sum" id="oneSum"></div>
+</div>
+
+<div class="card ship" id="cardShip">
+  <h2><span id="shipTitle">总共需要</span> <span class="tag" id="shipTag"></span></h2>
+  <div class="sum" id="shipSum"></div>
+</div>
+
+</div>
+
+<script>
+/* ================= 算法内核 =================
+   一根喷管 = 一条链：[引管]→[岸边→首喷头]→喷头→[管段]→喷头→…
+   管条长 = 喷头间距 − 0.2m 喷头本体；3m/4m 整管按顺序消耗，余料可结转到下一段。
+   间距只能取「设定值」；若凑不满，最后一段自动留一个收尾间距。
+   动态规划：采购管料长 > 整管根数 > 拼接数 > 间距偏差（依次优先）。
+   ============================================ */
+var NOZZLE=0.2, STEP=0.1, SPLIT_LEN=35;
+var W1=1e12, W2=1e9, W3=1e6, W4=1e3, W5=1e4, INF=Infinity;
+var SINGLE=[8,10,12], DOUBLE=[6,7,8,9,10];
+/* 等长双管（两根管一样长、喷头数一样、喷头对齐不错位）：数值 = 每根管的喷头数 */
+var SAME=["6+6长","7+7长","8+8长","9+9长","10+10长"];
+function S(x){return Math.round(x/STEP);}
+function M(n){return +(n*STEP).toFixed(4);}
+
+function needPlans(need, maxOpt, stock){
+  maxOpt=maxOpt||8;
+  stock=(stock&&stock.length)?stock:[S(3),S(4)];   // 单位：步
+  var smin=Math.min.apply(null,stock), smax=Math.max.apply(null,stock);
+  if(need<=0) return [];
+  var map={};
+  for(var n=1; n<=Math.floor(need/smin)+2; n++){
+    for(var a=0; a<=n; a++){
+      var b=n-a;
+      if(stock.length===1 && b>0) continue;
+      var total=a*smin+b*smax;
+      if(total<need) continue;
+      for(var li=0; li<stock.length; li++){
+        var last=stock[li], rest=total-last;
+        if(n-1>0 && rest>=need) continue;            // 最后一根没被用到 → 退化，去掉
+        var a2,b2;
+        if(smax===smin){ a2=n-1; b2=0; }
+        else { a2=((n-1)*smax-rest)/(smax-smin); b2=(n-1)-a2; }
+        if(a2<0 || b2<0 || a2+b2!==n-1 || a2*smin+b2*smax!==rest) continue;
+        var sizes=[];
+        for(var i=0;i<b2;i++) sizes.push(+(smax*STEP).toFixed(2));
+        for(var j=0;j<a2;j++) sizes.push(+(smin*STEP).toFixed(2));
+        sizes.push(+(last*STEP).toFixed(2));
+        var key=total+'_'+simLeft(sizes, need);
+        if(!map[key]) map[key]={buy:total, sizes:sizes, n:n};
+      }
+    }
+  }
+  return Object.keys(map).map(function(k){return map[k];})
+    .sort(function(x,y){return x.buy-y.buy || x.n-y.n;})
+    .slice(0,maxOpt);
+}
+function simLeft(sizes, need){
+  var rem=need, left=0;
+  for(var i=0;i<sizes.length;i++){ var c=S(sizes[i]), t=Math.min(c,rem); rem-=t; left=c-t; if(rem<=0) break; }
+  return left;
+}
+function fillOpts(m, r, cache, stock){
+  if(m<=0) return [{cost:0,left:r,pi:0,sizes:[]}];
+  if(r>=m) return [{cost:0,left:r-m,pi:0,sizes:[]}];
+  var ck=r+'_'+m, v=cache.get(ck);
+  if(v===undefined){
+    v=[]; var need=m-r;
+    needPlans(need, 8, stock).forEach(function(p,i){
+      var n=p.sizes.length;
+      v.push({cost:p.buy*W1 + n*W2 + (r>0?n:n-1)*W3, left:simLeft(p.sizes,need), pi:i, sizes:p.sizes});
+    });
+    cache.set(ck,v);
+  }
+  return v;
+}
+/* o: {mode:"fix"|"even"|"cut", vals:[切长], tol, stock:[30,40]/[30]/[40], end, endTol, lead}
+   fix  = 固定切长：间距只能取勾选值（车间照着裁）
+   even = 均距：每刀在均距 ±0.1 内挑 → 间距最齐
+   cut  = 齐料：每刀在均距 ±tol 内自由挑 → 优先凑 1+2 / 2+2 这种整刀，间距有零有零 */
+function solveChain(name, first, last, n, lead, o){
+  var nz=S(NOZZLE), nGap=n-1;
+  if(nGap<1) return null;
+  var span=last-first;
+  if(span<=0) return null;
+  var stock=o.stock||[S(3),S(4)];
+  var fixed=(o.mode==="fix") || (!o.mode && o.vals && o.vals.length>0);
+  // 设定值 = 车间实际裁切的管长；喷头本体 0.2 米另加 → 喷头中心间距 = 切长 + 0.2
+  var VS=fixed? o.vals.map(function(v){ return S(v)+nz; }).filter(function(v){return v>0;})
+                 .sort(function(a,b){return a-b;}) : [];
+  if(fixed && !VS.length) return null;
+  var vset={}; VS.forEach(function(v){ vset[v]=1; });
+  var avg=span/nGap, avgS=S(avg), spanS=S(span);
+  var leadS=S(lead), preS=S(first-NOZZLE/2), c0=leadS+preS;
+  var TAILP=5*W1;
+  var remLo=0, remHi=0, loSpan=1, hiSpan=1e9, evenSet=null;
+  if(fixed){
+    remLo=Math.max(S(0.5), VS[0]-S(0.5)); remHi=VS[VS.length-1]+S(0.5);
+  }else if(o.mode==="even"){
+    // 均距：只给均距最近的三个 0.1 米档（floor/round/ceil）。三个值是连续的整数步，
+    // 任意 nGap 刀的累计和都凑得出 → 一定有解，而且间距全程相差不超过 0.1 米
+    var q=avg*10, e1=Math.round(q), e2=Math.floor(q+1e-6), e3=Math.ceil(q-1e-6);
+    evenSet=[e2,e1,e3].filter(function(v,i,arr){ return v>0 && arr.indexOf(v)===i; })
+              .sort(function(a,b){return a-b;});
+  }else{
+    var tol=o.tol||1.0;
+    var dmin=Math.min(Math.ceil(Math.max(avg-tol,0.7*avg)/STEP)*STEP, avg);
+    var dmax=Math.max(Math.floor((avg+tol)/STEP)*STEP, avg);
+    loSpan=Math.max(S(dmin), avgS-2*S(tol)); hiSpan=Math.min(S(dmax), avgS+2*S(tol));
+  }
+  var segs=[["lead",leadS,0],["pre",preS,0]];
+  for(var i=0;i<nGap;i++) segs.push(["gap",0,i+1]);
+
+  var cache=new Map(), cur=new Map(); cur.set("0_0",0), backs=[];
+  for(var si=0;si<segs.length;si++){
+    var kind=segs[si][0], mS=segs[si][1], gi=segs[si][2], flex=kind==="gap";
+    var nxt=new Map(), bmap=new Map();
+    cur.forEach(function(c,key){
+      var kv=key.split("_"), x=+kv[0], r=+kv[1], cands, i, c2, k2;
+      // 上一段那根整管剩下一小截（<0.5 米 = 5 步）却要拿来做这一段 → 工人要裁碎料、还要接一道
+      var cb0=c + (r>0 && r<5 ? W5 : 0);
+      if(flex){
+        cands=[];
+        if(o.gaps && o.gaps.length){
+          cands=[S(o.gaps[gi-1])];        // 等长双管的第二根：照抄第一根的间距 → 喷头完全对齐
+        }else if(fixed){
+          cands=VS.slice();
+          if(gi===nGap){                              // 最后一段：允许收尾间距
+            var need=spanS-(x-c0);
+            if(need>=remLo && need<=remHi) cands.push(need);
+          }
+        }else if(evenSet){
+          cands=evenSet.slice();
+        }else{
+          var d=x-(c0+(gi-1)*avgS);                    // 齐料模式：均距±误差
+          var lo=Math.max(loSpan, avgS-2*S(o.tol||1.0)-d), hi=Math.min(hiSpan, avgS+2*S(o.tol||1.0)-d);
+          for(var mm2=lo; mm2<=hi; mm2++) cands.push(mm2);
+        }
+        for(i=0;i<cands.length;i++){
+          var mm=cands[i], isTail=(fixed && !vset[mm])?1:0;
+          var cb=cb0+Math.abs(mm-avgS)*W4 + isTail*TAILP, oo=fillOpts(mm-nz, r, cache, stock);
+          for(var j=0;j<oo.length;j++){
+            c2=cb+oo[j].cost; k2=(x+mm)+"_"+oo[j].left;
+            if(c2<(nxt.get(k2)===undefined?INF:nxt.get(k2))){ nxt.set(k2,c2); bmap.set(k2,[key,mm,oo[j].pi]); }
+          }
+        }
+      }else{
+        var oo2=fillOpts(mS, r, cache, stock);
+        for(i=0;i<oo2.length;i++){
+          c2=cb0+oo2[i].cost; k2=(x+mS)+"_"+oo2[i].left;
+          if(c2<(nxt.get(k2)===undefined?INF:nxt.get(k2))){ nxt.set(k2,c2); bmap.set(k2,[key,mS,oo2[i].pi]); }
+        }
+      }
+    });
+    if(!nxt.size) return null;
+    backs.push(bmap); cur=nxt;
+  }
+  var bk=null, bc=INF;
+  cur.forEach(function(c,key){ if(+key.split("_")[0]===c0+spanS && c<bc){ bk=key; bc=c; } });
+  if(bk===null) return null;
+
+  var moves=[], key=bk;
+  for(var s2=segs.length-1;s2>=0;s2--){
+    var b=backs[s2].get(key); if(!b) return null;
+    moves.push([b[1], b[2], +b[0].split("_")[1]]); key=b[0];
+  }
+  moves.reverse();
+
+  var segOut=[], pipes=[], openP=null;
+  for(var s3=0;s3<segs.length;s3++){
+    var kd=segs[s3][0], gi2=segs[s3][2];
+    var mm2=moves[s3][0], pi=moves[s3][1], rB=moves[s3][2];
+    var mat=kd==="gap"?mm2-nz:mm2, pieces=[], rem=mat;
+    if(openP && openP.remain>0){
+      var tk=Math.min(openP.remain, rem);
+      openP.cuts.push([tk,kd,gi2]); pieces.push([tk,openP.size,openP.idx]);
+      openP.remain-=tk; rem-=tk; if(openP.remain<=0) openP=null;
+    }
+    if(rem>0){
+      var szs=fillOpts(mat, rB, cache, stock)[pi].sizes;
+      for(var q=0;q<szs.length;q++){
+        var sz=szs[q], p={size:sz, remain:S(sz), cuts:[], idx:pipes.length};
+        var t2=Math.min(p.remain, rem);
+        if(t2<=0) break;
+        pipes.push(p); openP=p;
+        p.cuts.push([t2,kd,gi2]); pieces.push([t2,sz,p.idx]);
+        p.remain-=t2; rem-=t2;
+        if(p.remain<=0) openP=null;
+        if(rem<=0) break;
+      }
+    }
+    var inf={kind:kd, idx:gi2, m:M(mat)};
+    if(kd==="gap"){ inf.gap=M(mm2); inf.dev=M(mm2-avg); inf.tail=(fixed && !vset[mm2])?1:0; }
+    inf.pieces=pieces.map(function(v){return [M(v[0]), v[1], v[2]];});
+    segOut.push(inf);
+  }
+  pipes.forEach(function(p){ p.waste=M(S(p.size)-p.cuts.reduce(function(a,c){return a+c[0];},0)); });
+
+  var purchased=pipes.reduce(function(a,p){return a+p.size;},0);
+  var material=segOut.reduce(function(a,s){return a+s.m;},0);
+  // 拼接处 = 同一段里用了几截管条（几截就要几个直通对接）
+  var joints=segOut.reduce(function(a,s){return a+Math.max(0, s.pieces.length-1);},0);
+  // 整根用 = 不用锯子（只裁一刀、这一刀正好用完整根）；其余都要动锯子（含裁一刀但剩料用不掉的）
+  var cut=0, whole=0;
+  pipes.forEach(function(p){
+    var used=p.cuts.reduce(function(a,c){return a+c[0];},0);
+    if(p.cuts.length===1 && used>=S(p.size)) whole++; else cut++;
+  });
+  var pieces=pipes.reduce(function(a,p){return a+p.cuts.length;},0);
+  var nozzles=[{idx:1,pos:+first.toFixed(2)}], acc=first;
+  segOut.forEach(function(s){ if(s.kind==="gap"){ acc+=s.gap; nozzles.push({idx:s.idx+1,pos:+acc.toFixed(2)}); } });
+  return {name:name, n:n, first:+first.toFixed(2), last:+last.toFixed(2), avg:+avg.toFixed(2),
+    segments:segOut, pipes:pipes, nozzles:nozzles,
+    totals:{purchased:+purchased.toFixed(2), material:+material.toFixed(2),
+      waste:+(purchased-material).toFixed(2), pipes:pipes.length, joints:joints,
+      cut:cut, pieces:pieces,
+      n3:pipes.filter(function(p){return Math.abs(p.size-3)<1e-6;}).length,
+      n4:pipes.filter(function(p){return Math.abs(p.size-4)<1e-6;}).length,
+      whole:whole,
+      nozzles:n}};
+}
+/* 端距不是硬指标：在 ±endTol 内逐 0.1 米试，挑最省料、最少接头的那一档。
+   （岸边段 = 端距 − 0.1，凑成整米时"累计长度"才对得上 3/4 米整管，才切得出 1+2、2+2）*/
+function calc(L, cfg, o){
+  var tol=o.endTol||0;
+  if(!(tol>0)) return calcOne(L, cfg, o);
+  var base=Math.round(o.end*10), best=null, bestKey=null;
+  for(var d=-Math.round(tol*10); d<=Math.round(tol*10); d++){
+    var v=(base+d)/10;
+    if(v<0) continue;
+    var r=calcOne(L, cfg, Object.assign({}, o, {end:v, endTol:0}));
+    if(!r) continue;
+    r.endUsed=+v.toFixed(2);
+    var t=r.totals, key=[t.purchased, t.pipes, t.joints, Math.abs(d)];
+    if(!best || key[0]<bestKey[0] || (key[0]===bestKey[0] && key[1]<bestKey[1])
+        || (key[0]===bestKey[0] && key[1]===bestKey[1] && key[2]<bestKey[2])
+        || (key[0]===bestKey[0] && key[1]===bestKey[1] && key[2]===bestKey[2] && key[3]<bestKey[3])){
+      best=r; bestKey=key;
+    }
+  }
+  if(!best && o.mode==="even") return calc(L,cfg,Object.assign({},o,{mode:"cut"}));  // 均距排不下就退回齐料
+  if(best){ best.endBase=o.end; best.opts=Object.assign({}, o, {end:best.endUsed}); }
+  return best;
+}
+function calcOne(L, cfg, o){
+  var end=o.end, lead=o.lead, raw=String(cfg), num=raw.replace(/长$/,""), same=/长$/.test(raw);
+  if(num.indexOf("+")<0){
+    var c=solveChain("主喷管", end, L-end, +num, lead, o);
+    return c? pack(L,raw,"单管道",[c],o) : null;
+  }
+  var a=num.split("+"), half=L/2, n1=+a[0], n2=+a[1];
+  if(same){
+    // 等长双管：两根管都从岸边铺到棚尾、一样长，喷头数一样、间距一样、喷头对齐（不错位）。
+    // A 管按当前间距模式解；B 管照抄 A 的每一个间距 → 两管喷头位置完全重合。
+    var cA=solveChain("A管", end, L-end, n1, lead, o);
+    if(!cA) return null;
+    var gs=cA.segments.filter(function(s){ return s.kind==="gap"; }).map(function(s){ return s.gap; });
+    if(gs.length !== n2-1) return null;
+    var cB=solveChain("B管", end, L-end, n2, lead, Object.assign({}, o, {gaps:gs}));
+    if(!cB) return null;
+    return pack(L, raw, "双管等长", [cA,cB], o);
+  }
+  // 双管：中点是两根管交界。交界空档尽量跟其它喷头间距看齐：
+  //   固定切长 → 逐个试设定值（外加"一个端距"兜底）；均距/齐料 → 就取均距
+  // 空档两管各一半（取到 0.1 米）→ 两根管喷头区一样长，等喷头数时两管间距完全相同
+  var cands=[], seen={};
+  if(o.mode==="fix" || (!o.mode && o.vals && o.vals.length)){
+    o.vals.slice().sort(function(x,y){return x-y;}).forEach(function(v){ if(v>0 && !seen[v]){ seen[v]=1; cands.push(v); } });
+    if(!seen[end]) cands.push(end);
+  }else{
+    cands.push( (L-2*end)/Math.max(1,(n1+n2-1)) );     // 中点空档 = 均距
+  }
+  var best=null;
+  cands.forEach(function(G){
+    var m=Math.max(0.3, S(G/2)*STEP);
+    var c1=solveChain("长喷管", half+m, L-end, n1, lead, o);
+    var c2=solveChain("短喷管", end, half-m, n2, lead, o);
+    if(!c1||!c2) return;
+    var cand=pack(L,raw,"双管道",[c1,c2],o);
+    cand.gapMid=+(2*m).toFixed(2);
+    if(!best || betterCase(cand,best)) best=cand;
+  });
+  return best;
+}
+function betterCase(a,b){                 // 挑中点空档：先省料 → 再少管 → 再整齐 → 再贴近均距
+  if(a.totals.purchased!==b.totals.purchased) return a.totals.purchased<b.totals.purchased;
+  if(a.totals.pipes!==b.totals.pipes) return a.totals.pipes<b.totals.pipes;
+  if(a.totals.tails!==b.totals.tails) return a.totals.tails<b.totals.tails;
+  if(a.totals.devMax!==b.totals.devMax) return a.totals.devMax<b.totals.devMax;
+  return Math.abs(a.gapMid-a.totals.avgAll)<Math.abs(b.gapMid-b.totals.avgAll);
+}
+function pack(L,cfg,type,chains,o){
+  var t={purchased:0,material:0,pipes:0,n3:0,n4:0,nozzles:0,joints:0,cut:0,pieces:0,whole:0,tails:0,devMax:0};
+  chains.forEach(function(ch){ ["purchased","material","pipes","n3","n4","nozzles","joints","cut","pieces","whole"]
+    .forEach(function(k){ t[k]+=ch.totals[k]; }); });
+  var spanS=0, gapN=0;
+  chains.forEach(function(ch){
+    ch.segments.forEach(function(s){
+      if(s.kind!=="gap") return;
+      if(s.tail) t.tails++;
+      var d=Math.abs(s.gap-ch.avg);
+      if(d>t.devMax) t.devMax=+d.toFixed(2);
+      spanS+=s.gap; gapN++;
+    });
+  });
+  t.avgAll=gapN? +(spanS/gapN).toFixed(3) : 0;
+  t.waste=+(t.purchased-t.material).toFixed(2);
+  t.waste_rate=t.purchased?+(100*t.waste/t.purchased).toFixed(1):0;
+  t.joints=Math.round(t.joints);
+  return {L:L, W:o.W||9, cfg:cfg, type:type, chains:chains, totals:t, opts:o};
+}
+function needLen(L,cfg,o){                       // 需要的净长（米），用于提示
+  if(String(cfg).indexOf("+")<0) return [L-2*o.end];
+  var a=String(cfg).split("+"), n1=+a[0], n2=+a[1];
+  // 中点空档跟其它切长看齐（喷头中心间距 = 切长 + 0.2）
+  var G = (o.vals && o.vals.length) ? o.vals[0] : (L-2*o.end)/Math.max(1,(n1+n2-1));
+  var need=(L-2*o.end-(G+NOZZLE))/2;
+  return [need, need];
+}
+/* ================= 界面 ================= */
+var $ = function(id){return document.getElementById(id);};
+var state={case:null};
+function f(x){ return (Math.round(x*100)/100).toString(); }
+var PRESET=[1.5,2,2.5,3,3.5,4];
+
+function opts(){
+  var mode=$("gmode").value, vs=[];
+  if(mode==="fix"){
+    Array.prototype.forEach.call(document.querySelectorAll("#vals input[data-v]"), function(i){
+      if(i.checked) vs.push(parseFloat(i.dataset.v));
+    });
+    var cu=parseFloat($("cu").value);
+    if(cu>0) vs.push(cu);
+    vs.sort(function(a,b){return a-b;});
+    if(!vs.length) vs=[2,3];
+  }  var st=$("stock").value;
+  return {end:+$("end").value, endTol:Math.max(0,+$("endTol").value||0), lead:+$("lead").value, W:+$("W").value||9,
+    mode:mode, vals:vs, tol:+$("tol").value,
+    stock: st==="3"? [S(3)] : st==="4"? [S(4)] : [S(3),S(4)]};
+}
+/* 等长双管只在这个长度下真排得下时才出现在下拉里 */
+function sameOK(L, o){
+  var probe=Object.assign({}, o, {endTol:0});
+  return SAME.filter(function(s){ return !!calc(L, s, probe); });
+}
+function cfgOptions(){
+  // 单管 8/10/12 + 长短双管 6+6~10+10 + 等长双管 6+6~10+10（排得下的才列出来）
+  return SINGLE.map(String).concat(DOUBLE.map(function(n){ return n+"+"+n; }))
+               .concat(sameOK(+$("L").value, opts()));
+}
+function better(a, b){        // a 是否比 b 更省
+  if(a.purchased!==b.purchased) return a.purchased<b.purchased;
+  if(a.pipes!==b.pipes) return a.pipes<b.pipes;
+  return a.nozzles<b.nozzles;
+}
+function bestCfg(L, o){
+  var list=L<=SPLIT_LEN? SINGLE.map(String) : DOUBLE.map(function(n){ return n+"+"+n; });
+  if(/长$/.test($("cfg").value)){          // 等长双管：只在这个长度下排得下的那些里挑
+    list=sameOK(L, o);
+    if(!list.length) list=L<=SPLIT_LEN? SINGLE.map(String) : DOUBLE.map(function(n){ return n+"+"+n; });
+  }
+  var best=null;
+  list.forEach(function(cf){
+    var r=calc(L, cf, o);
+    if(r && (!best || better(r.totals, best.totals))) best=r;
+  });
+  return best? best.cfg : list[0];
+}
+function syncOpts(pickBest){
+  var L=+$("L").value, cur=$("cfg").value, list=cfgOptions(), o=opts();
+  if(list.indexOf(cur)<0 || pickBest) cur=bestCfg(L, o);
+  $("cfg").innerHTML=list.map(function(x){
+    return '<option value="'+x+'">'+(/长$/.test(x)? "等长 "+x.replace("长","") : x)+' 喷头</option>';
+  }).join("");
+  $("cfg").value=cur;
+}
+function run(){
+  syncOpts();
+  var o=opts(), L=+$("L").value, qty=Math.max(1, parseInt($("qty").value)||1);
+  var c=calc(L, $("cfg").value, o);
+  if(!c){
+    var vmin=Math.min.apply(null,o.vals), vmax=Math.max.apply(null,o.vals);
+    var smin=vmin+NOZZLE, smax=vmax+NOZZLE;        // 喷头中心间距 = 切长 + 0.2
+    var numv=String($("cfg").value).replace(/长$/,"");
+    var same=/长$/.test($("cfg").value);
+    var parts=(numv.indexOf("+")<0)
+      ? [{name:"喷管", ng:(+numv)-1, need:L-2*o.end}]
+      : same
+      ? [{name:"A管", ng:(+numv.split("+")[0])-1, need:L-2*o.end},
+         {name:"B管", ng:(+numv.split("+")[1])-1, need:L-2*o.end}]
+      : [{name:"长喷管", ng:(+numv.split("+")[0])-1, need:needLen(L,0,o)[0]},
+         {name:"短喷管", ng:(+numv.split("+")[1])-1, need:needLen(L,0,o)[1]}];
+    var why;
+    if(!o.vals.length){
+      why = parts.map(function(p){
+        return p.name+" 要排 "+f(p.need)+" 米，平均每刀 "+f(p.need/p.ng-NOZZLE)+" 米，"
+          + "一根 4m 管装不下时需要两根管接";
+      }).join("<br>");
+    }else{
+      why = parts.map(function(p){
+        var ngMin=Math.ceil((p.need-0.5)/smax), ngMax=Math.floor((p.need+0.5)/smin);
+        var s=p.name+" 要排 "+f(p.need)+" 米，现在只有 "+p.ng+" 刀";
+        if(ngMin>ngMax) return s+"，但切长 "+o.vals.join("/")+" 米无论几刀都凑不出来";
+        if(p.ng<ngMin) return s+"，每刀最多 "+f(vmax)+" 米 → 最多排 "+f(p.ng*smax+0.5)+" 米 → 至少要 "+ngMin+" 刀（"+(ngMin+1)+" 个喷头）";
+        if(p.ng>ngMax) return s+"，每刀最少 "+f(vmin)+" 米 → 最少排 "+f(p.ng*smin-0.5)+" 米 → 最多 "+ngMax+" 刀（"+(ngMax+1)+" 个喷头）";
+        return s+"，凑不成切长 "+o.vals.join("/")+" 米的组合";
+      }).join("<br>");
+    }
+    var base=L<=SPLIT_LEN? SINGLE.map(String) : DOUBLE.map(function(n){ return n+"+"+n; });
+    var okList=base.filter(function(n){ return !!calc(L, n, o); });
+    var okSame=sameOK(L, o);
+    if(okSame.length) okList=okList.concat(okSame);
+    $("plan").innerHTML = '<div class="err"><b>这个配置排不下。</b><br>'+why
+      + '<br>本长度能排的配置：<b>'+(okList.length? okList.join("、") : "无，请改切长/端距/管型") + '</b></div>';
+    $("phead").innerHTML="";
+    $("oneSum").innerHTML=""; $("shipSum").innerHTML="";
+    $("cardShip").style.display="none";
+    $("oneTag").textContent=""; $("shipTag").textContent=""; $("planTag").textContent="";
+    return;
+  }
+  $("planTag").textContent = [qty>1 ? (qty+" 个棚一样") : "", endNote(c)].filter(Boolean).join("　·　");
+  renderHead(c, qty); renderPlan(c); renderSums(c, qty);
+}
+/* 每根喷管一行：几个喷头 + 每一刀切多长（2×6 = 2 米切 6 刀，* = 最后一刀微调）+ 不用锯的整根几根 */
+function chainLines(c){
+  var same=/长$/.test(c.cfg);
+  var out=c.chains.map(function(ch){
+    var g=gapSummary(ch);
+    var col = ch.name==="长喷管" || ch.name==="A管" ? "#e8873a" : (ch.name==="短喷管" || ch.name==="B管" ? "#2b6cb0" : "#2f8f5b");
+    return '<div class="l"><i class="chip" style="background:'+col+'"></i>'
+      + '<b>'+ch.name+'</b> '+ch.n+' 喷头　切 '+g.cutTxt
+      + '　整根用 '+ch.totals.whole+' 根（不用锯）</div>';
+  }).join("");
+  if(same) out+='<div class="l">两根管一样长（都通长）、喷头数一样、间距一样，喷头上下对齐（不错位）</div>';
+  return out;
+}
+
+/* 端距自动微调说明（跟在"布置图"标题后面，不占正文） */
+function endNote(c){
+  if(!c || c.endUsed===undefined || Math.abs(c.endUsed-c.endBase)<1e-9) return "";
+  var d=+(c.endUsed-c.endBase).toFixed(1);
+  return '端距 '+f(c.endBase)+'→'+f(c.endUsed)+' 米（自动微调，两端喷头各'
+       + (d>0?"往外 ":"往里 ")+f(Math.abs(d))+' 米）';
+}
+function lockEnd(){ $("endTol").value=0; run(); }
+
+/* ================= 汇总：一个棚 / N 个棚 ================= */
+function mixHTML(t, k){
+  if(t.n4===0) return '<span class="t3">3m 管 × '+(t.pipes*k)+' 根</span>';
+  if(t.n3===0) return '<span class="t4">4m 管 × '+(t.pipes*k)+' 根</span>';
+  return '<span class="t3">3m × '+(t.n3*k)+' 根</span> ＋ <span class="t4">4m × '+(t.n4*k)+' 根</span>';
+}
+function renderSums(c, qty){
+  var t=c.totals, o=c.opts, N=Math.max(1, qty||1);
+  var util=t.purchased? Math.round(100*t.material/t.purchased) : 0;   // 管料利用率
+  var nEl=2*c.chains.length;
+  /* 一个棚 */
+  $("oneSum").innerHTML =
+    '<div class="n">'+t.pipes+'<small>根管</small></div>'+
+    '<div class="m">'+mixHTML(t,1)+'　共 <b>'+f(t.purchased)+' 米</b>　'
+    + '其中 <span class="cut">'+t.cut+' 根要切</span>（整根用 '+t.whole+' 根，不用锯）　浪费 '+f(t.waste)+' 米</div>'
+    + '<div class="l">共 '+t.pieces+' 条管条，短料全接下一段用掉　·　利用率 <b>'+util+'%</b>'
+    + '　·　直通 '+t.joints+' 个（每处对接 1 个）　·　45° 弯头 '+nEl+' 个</div>';
+  $("oneTag").textContent=c.W+" × "+c.L+" 米";
+
+  /* N 个棚（棚数=1 时与上面完全重复，不显示） */
+  $("cardShip").style.display = N>1 ? "" : "none";
+  if(N<=1){ $("shipSum").innerHTML=""; $("shipTag").textContent=""; return; }
+  $("shipTitle").textContent = N+" 个棚总共需要";
+  $("shipSum").innerHTML =
+    '<div class="n">'+(t.pipes*N)+'<small>根管</small></div>'+
+    '<div class="m">'+mixHTML(t,N)+'　共 <b>'+f(t.purchased*N)+' 米</b>　'
+    + '其中 <span class="cut">'+(t.cut*N)+' 根要切</span>　利用率 '+util+'%</div>'+
+    '<div class="l">'+t.pipes+' 根 × '+N+' = '+(t.pipes*N)+' 根　·　喷头 '+(t.nozzles*N)+' 个'
+    +'　·　直通 '+(t.joints*N)+' 个　·　45° 弯头 '+(nEl*N)+' 个</div>';
+  $("shipTag").textContent = f(t.purchased*N)+" 米";
+}
+
+/* 打印页眉：棚型 / 数量 / 配置 / 间距模式 / 端距 / 日期 */
+function renderHead(c, qty){
+  var N=Math.max(1, qty||1), d=new Date(), t=c.totals, o=c.opts;
+  var p2=function(x){ return ("0"+x).slice(-2); };
+  var modeTxt = o.vals.length ? ("切长 "+o.vals.join("/")) : (o.mode==="even"? "均距 ±"+f(t.devMax) : "齐料 ±"+f(t.devMax));
+  $("phead").innerHTML =
+    '<div class="t">万屿达投料机 · 管道下料单　<span style="font-weight:400;font-size:13px;color:#6d7f8a">'
+      + c.W+' × '+c.L+' 米　'+c.cfg+' 喷头　'+modeTxt+'</span></div>'+
+    '<div class="m">'+N+' 个棚　·　共 '+(t.pipes*N)+' 根管 / '+f(t.purchased*N)+' 米'
+      + '　·　'+d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate())+'</div>';
+}
+
+/* 间距统计：排成一行文字，画进布置图里 */
+function gapSummary(ch){
+  var gaps=ch.segments.filter(function(s){return s.kind==="gap";});
+  var cnt={}, ord=[];
+  gaps.forEach(function(g){
+    var k=f(g.gap);
+    if(cnt[k]===undefined){ cnt[k]={n:0, tail:0}; ord.push(k); }
+    cnt[k].n++; if(g.tail) cnt[k].tail=1;
+  });
+  ord.sort(function(a,b){return a-b;});
+  var avg=gaps.reduce(function(a,s){return a+s.gap;},0)/gaps.length;
+  var dev=Math.max.apply(null, gaps.map(function(s){ return Math.abs(s.gap-avg); }));
+  var txt = ord.map(function(k){
+    return k+'米×'+cnt[k].n+'段'+(cnt[k].tail?'*':'');
+  }).join('　');
+  // 切管长口径：间距 − 0.2 米喷头本体（车间真正裁的长度）
+  var cutTxt = ord.map(function(k){
+    return f(k-NOZZLE)+'×'+cnt[k].n+(cnt[k].tail?'*':'');
+  }).join('　');
+  return {txt:txt, cutTxt:cutTxt, avg:avg, dev:dev, n:gaps.length};
+}
+
+function planSVG(c){
+  var L=c.L, lead=c.opts.lead, end=c.opts.end, W=c.W||9;
+  c.chains.forEach(function(ch){ var a=ch.first;
+    ch.segments.forEach(function(g){ if(g.kind==="gap"){ var x1=a; a+=g.gap; g._x0=x1; g._x1=a; } }); });
+  var left=66, right=12, top=22, span=L+lead+1.2, sx=(1000-left-right)/span;
+  var X=function(x){ return left+(x+lead)*sx; };
+  // 棚高要放得下两根管各自的"间距行 + 喷头数字行 + 端距行"，否则上下两层会压在一起
+  var nc=c.chains.length, shedH=Math.max(nc===2?172:100, Math.min(152,W*sx));
+  var H=Math.round(top+shedH+22+nc*20+26);
+  var s='<svg viewBox="0 0 1000 '+H+'">';
+  s+='<rect x="'+X(0)+'" y="'+top+'" width="'+(L*sx)+'" height="'+shedH+'" fill="#eef7fb" stroke="#bcd8e6" stroke-width="1.5" rx="6"/>';
+  s+='<text x="'+(X(0)+L*sx-7)+'" y="'+(top+15)+'" font-size="12" fill="#4a7d95" text-anchor="end">小棚 '+L+' × '+W+' m</text>';
+  if(nc===2 && c.gapMid!==undefined) s+='<line x1="'+X(L/2)+'" y1="'+top+'" x2="'+X(L/2)+'" y2="'+(top+shedH)+'" stroke="#9dc3d4" stroke-dasharray="5 4"/>';
+  var my=top+shedH/2;
+  s+='<rect x="'+(left-52)+'" y="'+(my-15)+'" width="46" height="30" rx="6" fill="#4b5b66"/>';
+  s+='<text x="'+(left-52+23)+'" y="'+(my+4)+'" font-size="11.5" fill="#fff" text-anchor="middle">机器</text>';
+  c.chains.forEach(function(ch,ci){
+    var y0=top+shedH*(nc===1?0.52:(0.3+0.4*ci));
+    var y=y0;
+    var col = ch.name==="长喷管" || ch.name==="A管" ? "#e8873a" : (ch.name==="短喷管" || ch.name==="B管" ? "#2b6cb0" : "#2f8f5b");
+    // 机器在棚侧边：管道从侧壁进棚后转 90° 沿棚长方向走（1 个 45° 弯头在这里）
+    s+='<path d="M'+(left-6)+' '+my+' L'+(left-6)+' '+y+' L'+X(0)+' '+y+'" fill="none" stroke="#8a63c9" stroke-width="4"/>';
+    s+='<circle cx="'+(left-6)+'" cy="'+y+'" r="3.6" fill="none" stroke="#8a63c9" stroke-width="1.6"/>';
+    s+='<text x="'+((left-6+X(0))/2)+'" y="'+(y-10)+'" font-size="10" fill="#7a56b0" text-anchor="middle">引管 '+f(lead)+'m</text>';
+    // 喷管名抬到管子上方一整行，避免和第一段的间距数字压在一起
+    if(nc===1||ci===0) s+='<text x="'+X(0)+'" y="'+(y-33)+'" font-size="11.5" fill="'+col+'" font-weight="bold">'+ch.name+'（'+ch.n+' 喷头）</text>';
+    s+='<line x1="'+X(0)+'" y1="'+y+'" x2="'+X(ch.last+0.1)+'" y2="'+y+'" stroke="'+col+'" stroke-width="5" stroke-linecap="round"/>';
+    var prevPipe=-1;
+    ch.segments.forEach(function(g){ if(g.kind!=="gap"){ 
+        var last=(g.pieces&&g.pieces.length)? g.pieces[g.pieces.length-1][2] : undefined;
+        if(last!==undefined) prevPipe=last;
+        return; }
+      var x1=X(g._x0), x2=X(g._x1), w=x2-x1;
+      if(w<14){ var l2=(g.pieces[g.pieces.length-1]||[])[2]; if(l2!==undefined) prevPipe=l2; return; }
+      var by=y-11;
+      // 数字 = 这一段要切多长的管（g.m 已经是管料长 = 间距 − 0.2 喷头本体）
+      // 右下角小字 = 从几米管上切；橙色 = 接着上一段那根整管的余料（别新开管）
+      var cutLen=f(g.m);
+      var firstPipe=(g.pieces[0]||[])[2], pSize=(g.pieces[0]||[])[1];
+      var carry=(prevPipe>=0 && firstPipe===prevPipe);
+      var col=carry? "#b4690e" : "#42525c";
+      s+='<path d="M'+x1+' '+by+' L'+x1+' '+(by-4)+' L'+x2+' '+(by-4)+' L'+x2+' '+by+'" fill="none" stroke="'+(carry?"#d9a05a":"#93a7b2")+'" stroke-width="1"/>';
+      s+='<text x="'+((x1+x2)/2)+'" y="'+(by-6)+'" font-size="10" fill="'+col+'" text-anchor="middle" font-weight="bold">'
+        + cutLen+(g.tail?"*":"")
+        + '<tspan font-size="6.5" font-weight="normal" dy="2">'+pSize+'</tspan></text>';
+      prevPipe=(g.pieces[g.pieces.length-1]||[])[2];
+    });
+    ch.nozzles.forEach(function(nz){
+      var x=X(nz.pos);
+      s+='<rect x="'+(x-NOZZLE*sx/2)+'" y="'+(y-5)+'" width="'+Math.max(2.6,NOZZLE*sx)+'" height="10" fill="#c0392b" rx="1.5"/>';
+      s+='<text x="'+x+'" y="'+(y+17)+'" font-size="9.5" fill="#7b3a2e" text-anchor="middle">'+f(nz.pos)+'</text>';
+    });
+    var f0=ch.nozzles[0].pos, l0=ch.nozzles[ch.nozzles.length-1].pos, by2=y+28;
+    [[0,f0],[l0,L]].forEach(function(d){
+      if((X(d[1])-X(d[0]))<26) return;   // 太窄就整条不画，免得和喷头位置数字挤在一起
+      s+='<path d="M'+X(d[0])+' '+by2+' L'+X(d[1])+' '+by2+'" stroke="#c0392b" stroke-width="1" stroke-dasharray="3 2"/>';
+      s+='<text x="'+((X(d[0])+X(d[1]))/2)+'" y="'+(by2+10)+'" font-size="9" fill="#c0392b" text-anchor="middle">'+f(d[1]-d[0])+' m</text>';
+    });
+    if(nc===2 && ci===0 && c.gapMid!==undefined){
+      // 交界空档：短管末喷头 ↔ 长管首喷头之间那段没有喷头的管（只画一次；标签放线的右侧）
+      var ml=0, mr=L, my2=y0+50;
+      c.chains.forEach(function(q){ if(q.name==="短喷管") ml=q.last; else if(q.name==="长喷管") mr=q.first; });
+      var plain=mr-ml-NOZZLE;                    // 扣掉两头各半只喷头本体 = 实际那段空管
+      if(plain>0.2){
+        s+='<path d="M'+X(ml+NOZZLE/2)+' '+my2+' L'+X(mr-NOZZLE/2)+' '+my2+'" stroke="#8a63c9" stroke-width="1" stroke-dasharray="4 3"/>';
+        s+='<path d="M'+X(ml+NOZZLE/2)+' '+(my2-4)+' L'+X(ml+NOZZLE/2)+' '+(my2+4)+' M'+X(mr-NOZZLE/2)+' '+(my2-4)+' L'+X(mr-NOZZLE/2)+' '+(my2+4)+'" stroke="#8a63c9" stroke-width="1"/>';
+        s+='<text x="'+(X(mr)+7)+'" y="'+(my2+3)+'" font-size="10" fill="#7a56b0" text-anchor="start">中点空档 '+f(plain)+' 米</text>';
+      }
+    }
+  });
+  /* 棚内管长标注（长管 0~L，短管 0~L/2，都不含引管） */
+  var dimY=top+shedH+22;
+  c.chains.forEach(function(ch,ci){
+    var y=dimY+ci*20;
+    var isLong=(ch.name==="长喷管"||ch.name==="A管"), isShort=(ch.name==="短喷管");
+    var ex = isShort ? L/2 : L;                    // 短管只铺到棚中点
+    var col = isLong ? "#c2701f" : (isShort? "#245c9c" : "#226b48");
+    var x0=X(0), x1=X(ex);
+    s+='<path d="M'+x0+' '+y+' L'+x1+' '+y+'" stroke="'+col+'" stroke-width="1.1"/>';
+    s+='<path d="M'+x0+' '+(y-5)+' L'+x0+' '+(y+5)+' M'+x1+' '+(y-5)+' L'+x1+' '+(y+5)+'" stroke="'+col+'" stroke-width="1.1"/>';
+    if(isLong){
+      // 长管/A 管：标出第一个喷头距棚口的距离
+      var fx=X(ch.first);
+      s+='<path d="M'+fx+' '+(y-9)+' L'+fx+' '+(y+6)+'" stroke="'+col+'" stroke-width="1.6"/>';
+      s+='<text x="'+(fx+5)+'" y="'+(y-7)+'" font-size="11" fill="'+col+'" text-anchor="start">'
+        + '首喷头距棚口 '+f(ch.first)+' 米</text>';
+      s+='<text x="'+(x1-4)+'" y="'+(y-7)+'" font-size="11" fill="'+col+'" text-anchor="end">'
+        + ch.name+' 棚内 '+f(ex)+' 米（通长）</text>';
+    }else{
+      s+='<text x="'+((x0+x1)/2)+'" y="'+(y-7)+'" font-size="11" fill="'+col+'" text-anchor="middle">'
+        + ch.name+' 棚内 '+f(ex)+' 米'+(isShort? '（一半）' : '')+'</text>';
+    }
+  });
+  /* 每根喷管的"喷头/切长/管子组成"合到一行，画在图下方（HTML，用整页宽度） */
+  s+='<text x="1000" y="'+(H-4)+'" font-size="10.5" fill="#6d7f8a" text-anchor="end">岸边 0 m → 棚尾 '+L+' m'
+    + (c.opts.vals.length? '　（* = 最后一刀微调）' : (c.opts.mode==="even"? '　（均距模式）' : '　（齐料模式）')) + '</text>';
+  s+='</svg>';
+  return s;
+}
+function renderPlan(c){
+  var t=c.totals, o=c.opts;
+  var dev=Math.max.apply(null, c.chains.map(function(ch){ return gapSummary(ch).dev; }));
+  // 图 → 每根管怎么切 → 图例说明
+  $("plan").innerHTML=planSVG(c) + chainLines(c);
+  $("plannote").innerHTML=
+    "尺寸以岸边（棚口）为 0。<b>管上方数字＝要裁的管长</b>（右下角 3/4＝从几米管切），"
+    + "<b>橙色</b>＝接着上一根管的余料切。喷头中心间距 = 切长 + 0.2 米。"
+    + (o.vals.length? "" : o.mode==="even"
+        ? "均距模式：每刀在均距 ±0.1 内（实际 ±"+f(dev)+"），间距最齐。"
+        : "齐料模式：每刀在均距 ±"+f(o.tol)+" 内自由调（实际 ±"+f(dev)+"），优先凑 1+2 / 2+2 整刀。")
+    + (t.waste>0.001? "<b>最后一根管剩 "+f(t.waste)+" 米用不掉</b>。" : "");
+}
+
+/* 先建好所有输入控件 */
+(function(){
+  var vw=$("vals");
+  PRESET.forEach(function(v){
+    var lb=document.createElement("label");
+    lb.className = (v===2||v===3)?"on":"";
+    lb.innerHTML='<input type="checkbox" data-v="'+v+'"'+(v===2||v===3?" checked":"")+'>'+v+' 米';
+    vw.appendChild(lb);
+  });
+  var cu=document.createElement("span");
+  cu.innerHTML='其它 <input type="number" id="cu" class="cu" placeholder="米" step="0.1" min="0.5">';  vw.appendChild(cu);
+  vw.addEventListener("change", function(){
+    Array.prototype.forEach.call(vw.querySelectorAll("label"), function(l){
+      l.classList.toggle("on", l.querySelector("input").checked);
+    });
+    run();
+  });
+})();
+
+/* 事件 */
+["cfg","end","endTol","lead","cu","tol","stock","gmode","W","qty"].forEach(function(id){
+  $(id).addEventListener("change", run);
+  $(id).addEventListener("input", run);
+});
+$("L").addEventListener("change", function(){ syncOpts(true); run(); });
+$("gmode").addEventListener("change", function(){
+  var m=this.value;
+  $("fldTol").style.display = m==="cut" ? "" : "none";
+  $("fldVals").style.display = m==="fix" ? "" : "none";
+});
+$("btnPrint").onclick=function(){ window.print(); };
+syncOpts(true); run();
+</script>
+</body>
+</html>
