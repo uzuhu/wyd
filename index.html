@@ -540,8 +540,8 @@ function sameOK(L, o){
   return SAME.filter(function(s){ return !!calc(L, s, probe); });
 }
 function cfgOptions(){
-  // 仅返回喷头数量（8/10/12），管道布局由单独的"管道"字段控制
-  return SINGLE.map(String);
+  // 根据管道布局返回可选喷头数量：单管 8/10/12，双管 6/7/8/9/10
+  return $("layout").value==="dual" ? DOUBLE.map(String) : SINGLE.map(String);
 }
 function better(a, b){        // a 是否比 b 更省
   if(a.purchased!==b.purchased) return a.purchased<b.purchased;
@@ -549,7 +549,7 @@ function better(a, b){        // a 是否比 b 更省
   return a.nozzles<b.nozzles;
 }
 function bestCfg(L, o){
-  var list=SINGLE.map(String);
+  var list=$("layout").value==="dual" ? DOUBLE.map(String) : SINGLE.map(String);
   var best=null;
   list.forEach(function(cf){
     var r=calc(L, cf, o);
@@ -598,7 +598,7 @@ function run(){
         return s+"，凑不成切长 "+o.vals.join("/")+" 米的组合";
       }).join("<br>");
     }
-    var base=SINGLE.map(String);
+    var base=$("layout").value==="dual" ? DOUBLE.map(String) : SINGLE.map(String);
     var okList=base.filter(function(n){ return !!calc(L, n, o); });
     $("plan").innerHTML = '<div class="err"><b>这个配置排不下。</b><br>'+why
       + '<br>本长度能排的配置：<b>'+(okList.length? okList.join("、") : "无，请改切长/端距/管型") + '</b></div>';
