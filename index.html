@@ -115,20 +115,28 @@
       <label>棚数（个）</label>
       <input type="number" id="qty" value="1" min="1" max="999" step="1">
     </div>
+  </div>
+  <div class="row" style="margin-top:12px">
     <div class="fld">
-      <label>喷头配置</label>
+      <label>管道</label>
+      <select id="layout">
+        <option value="single">单管</option>
+        <option value="dual">双管</option>
+      </select>
+    </div>
+    <div class="fld" id="fldDualType" style="display:none">
+      <label>双管类型</label>
+      <select id="dualType">
+        <option value="split">一长一短</option>
+        <option value="same">二根一样长</option>
+      </select>
+    </div>
+    <div class="fld">
+      <label>喷头</label>
       <select id="cfg"></select>
     </div>
     <div class="fld">
-      <label>距棚两头（米）</label>
-      <input type="number" id="end" value="2" min="0" max="5" step="0.1">
-    </div>
-    <div class="fld">
-      <label title="程序在这个范围内自动挪端距（0.1 米一档），挑最省料、最少接头的那一档。填 0 = 锁定不挪。">自动微调 ±（米）</label>
-      <input type="number" id="endTol" value="0.3" min="0" max="1" step="0.1">
-    </div>
-    <div class="fld">
-      <label>管道</label>
+      <label>管材长度</label>
       <select id="stock">
         <option value="mix">自动</option>
         <option value="3">3米</option>
@@ -140,23 +148,27 @@
       <select id="gmode">
         <option value="fix" selected>固定切长</option>
         <option value="even">均距（最齐）</option>
-        <option value="cut">齐料（最省）</option>
       </select>
+    </div>
+    <div class="fld">
+      <label>距棚两头（米）</label>
+      <input type="number" id="end" value="2" min="0" max="5" step="0.1">
     </div>
     <div class="fld">
       <label>引管（米）</label>
       <input type="number" id="lead" value="5" min="1" max="10" step="0.5">
     </div>
+    <div class="fld">
+      <label title="程序在这个范围内自动挪端距（0.1 米一档），挑最省料、最少接头的那一档。填 0 = 锁定不挪。">自动微调 ±（米）</label>
+      <input type="number" id="endTol" value="0.3" min="0" max="1" step="0.1">
+    </div>
   </div>
   <div class="row" style="margin-top:12px">
-    <div class="fld" id="fldTol" style="display:none">
-      <label title="齐料 = 优先让每根管只裁两刀、整根用完（3m 管切 1+2 或 1.5+1.5，4m 管切 2+2 或 1+3）。允许误差越大越容易凑整刀，实测加宽不费料、不多接头，只是间距更不整齐。">允许误差 ±（米）</label>
-      <input type="number" id="tol" value="0.5" min="0.1" max="1" step="0.1">
-    </div>
     <div class="fld" id="fldVals" style="flex:1">
       <label>固定切长（可多选）＝ 裁出来的管长</label>
       <div class="vals" id="vals"></div>
-    </div>    <div class="fld">
+    </div>
+    <div class="fld">
       <label>&nbsp;</label>
       <button class="pri" id="btnPrint" title="打印对话框里要选：纸张方向「横向」· 缩放 100%（不要「适应页面」）· 取消勾选「页眉和页脚」；页边距本页面已定死 11 毫米">打印下料单（A4 横向）</button>
     </div>
@@ -510,8 +522,17 @@ function opts(){
     if(!vs.length) vs=[2,3];
   }  var st=$("stock").value;
   return {end:+$("end").value, endTol:Math.max(0,+$("endTol").value||0), lead:+$("lead").value, W:+$("W").value||9,
-    mode:mode, vals:vs, tol:+$("tol").value,
+    mode:mode, vals:vs, tol:1.0,
     stock: st==="3"? [S(3)] : st==="4"? [S(4)] : [S(3),S(4)]};
+}
+/* 根据喷头配置、管道和双管类型生成内部配置字符串 */
+function getCurrentCfg(){
+  var num=$("cfg").value;
+  var layout=$("layout").value;
+  var dualType=$("dualType").value;
+  if(layout==="single") return num;
+  if(dualType==="same") return num+"+"+num+"长";
+  return num+"+"+num; // split
 }
 /* 等长双管只在这个长度下真排得下时才出现在下拉里 */
 function sameOK(L, o){
@@ -519,9 +540,8 @@ function sameOK(L, o){
   return SAME.filter(function(s){ return !!calc(L, s, probe); });
 }
 function cfgOptions(){
-  // 单管 8/10/12 + 长短双管 6+6~10+10 + 等长双管 6+6~10+10（排得下的才列出来）
-  return SINGLE.map(String).concat(DOUBLE.map(function(n){ return n+"+"+n; }))
-               .concat(sameOK(+$("L").value, opts()));
+  // 仅返回喷头数量（8/10/12），管道布局由单独的"管道"字段控制
+  return SINGLE.map(String);
 }
 function better(a, b){        // a 是否比 b 更省
   if(a.purchased!==b.purchased) return a.purchased<b.purchased;
@@ -529,11 +549,7 @@ function better(a, b){        // a 是否比 b 更省
   return a.nozzles<b.nozzles;
 }
 function bestCfg(L, o){
-  var list=L<=SPLIT_LEN? SINGLE.map(String) : DOUBLE.map(function(n){ return n+"+"+n; });
-  if(/长$/.test($("cfg").value)){          // 等长双管：只在这个长度下排得下的那些里挑
-    list=sameOK(L, o);
-    if(!list.length) list=L<=SPLIT_LEN? SINGLE.map(String) : DOUBLE.map(function(n){ return n+"+"+n; });
-  }
+  var list=SINGLE.map(String);
   var best=null;
   list.forEach(function(cf){
     var r=calc(L, cf, o);
@@ -545,19 +561,20 @@ function syncOpts(pickBest){
   var L=+$("L").value, cur=$("cfg").value, list=cfgOptions(), o=opts();
   if(list.indexOf(cur)<0 || pickBest) cur=bestCfg(L, o);
   $("cfg").innerHTML=list.map(function(x){
-    return '<option value="'+x+'">'+(/长$/.test(x)? "等长 "+x.replace("长","") : x)+' 喷头</option>';
+    return '<option value="'+x+'">'+x+' 喷头</option>';
   }).join("");
   $("cfg").value=cur;
 }
 function run(){
   syncOpts();
   var o=opts(), L=+$("L").value, qty=Math.max(1, parseInt($("qty").value)||1);
-  var c=calc(L, $("cfg").value, o);
+  var cfgStr=getCurrentCfg();
+  var c=calc(L, cfgStr, o);
   if(!c){
     var vmin=Math.min.apply(null,o.vals), vmax=Math.max.apply(null,o.vals);
     var smin=vmin+NOZZLE, smax=vmax+NOZZLE;        // 喷头中心间距 = 切长 + 0.2
-    var numv=String($("cfg").value).replace(/长$/,"");
-    var same=/长$/.test($("cfg").value);
+    var numv=cfgStr.replace(/长$/,"");
+    var same=/长$/.test(cfgStr);
     var parts=(numv.indexOf("+")<0)
       ? [{name:"喷管", ng:(+numv)-1, need:L-2*o.end}]
       : same
@@ -581,10 +598,8 @@ function run(){
         return s+"，凑不成切长 "+o.vals.join("/")+" 米的组合";
       }).join("<br>");
     }
-    var base=L<=SPLIT_LEN? SINGLE.map(String) : DOUBLE.map(function(n){ return n+"+"+n; });
+    var base=SINGLE.map(String);
     var okList=base.filter(function(n){ return !!calc(L, n, o); });
-    var okSame=sameOK(L, o);
-    if(okSame.length) okList=okList.concat(okSame);
     $("plan").innerHTML = '<div class="err"><b>这个配置排不下。</b><br>'+why
       + '<br>本长度能排的配置：<b>'+(okList.length? okList.join("、") : "无，请改切长/端距/管型") + '</b></div>';
     $("phead").innerHTML="";
@@ -655,7 +670,7 @@ function renderSums(c, qty){
 function renderHead(c, qty){
   var N=Math.max(1, qty||1), d=new Date(), t=c.totals, o=c.opts;
   var p2=function(x){ return ("0"+x).slice(-2); };
-  var modeTxt = o.vals.length ? ("切长 "+o.vals.join("/")) : (o.mode==="even"? "均距 ±"+f(t.devMax) : "齐料 ±"+f(t.devMax));
+  var modeTxt = o.vals.length ? ("切长 "+o.vals.join("/")) : "均距 ±"+f(t.devMax);
   $("phead").innerHTML =
     '<div class="t">万屿达投料机 · 管道下料单　<span style="font-weight:400;font-size:13px;color:#6d7f8a">'
       + c.W+' × '+c.L+' 米　'+c.cfg+' 喷头　'+modeTxt+'</span></div>'+
@@ -792,9 +807,7 @@ function renderPlan(c){
   $("plannote").innerHTML=
     "尺寸以岸边（棚口）为 0。<b>管上方数字＝要裁的管长</b>（右下角 3/4＝从几米管切），"
     + "<b>橙色</b>＝接着上一根管的余料切。喷头中心间距 = 切长 + 0.2 米。"
-    + (o.vals.length? "" : o.mode==="even"
-        ? "均距模式：每刀在均距 ±0.1 内（实际 ±"+f(dev)+"），间距最齐。"
-        : "齐料模式：每刀在均距 ±"+f(o.tol)+" 内自由调（实际 ±"+f(dev)+"），优先凑 1+2 / 2+2 整刀。")
+    + (o.vals.length? "" : "均距模式：每刀在均距 ±0.1 内（实际 ±"+f(dev)+"），间距最齐。")
     + (t.waste>0.001? "<b>最后一根管剩 "+f(t.waste)+" 米用不掉</b>。" : "");
 }
 
@@ -818,15 +831,17 @@ function renderPlan(c){
 })();
 
 /* 事件 */
-["cfg","end","endTol","lead","cu","tol","stock","gmode","W","qty"].forEach(function(id){
+["cfg","end","endTol","lead","cu","stock","gmode","W","qty","layout","dualType"].forEach(function(id){
   $(id).addEventListener("change", run);
   $(id).addEventListener("input", run);
 });
 $("L").addEventListener("change", function(){ syncOpts(true); run(); });
 $("gmode").addEventListener("change", function(){
   var m=this.value;
-  $("fldTol").style.display = m==="cut" ? "" : "none";
   $("fldVals").style.display = m==="fix" ? "" : "none";
+});
+$("layout").addEventListener("change", function(){
+  $("fldDualType").style.display = this.value==="dual" ? "" : "none";
 });
 $("btnPrint").onclick=function(){ window.print(); };
 syncOpts(true); run();
