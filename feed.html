@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>万屿达投料机 · 投料计算</title>
+<style>
+  :root{--ink:#16232c;--sub:#6d7f8a;--line:#dde6eb;--ok:#1c6b45;--bad:#c0392b;}
+  *{box-sizing:border-box}
+  body{margin:0;background:#f2f5f7;color:var(--ink);
+    font:15px/1.6 "Microsoft YaHei","PingFang SC","Hiragino Sans GB",sans-serif}
+  .wrap{max-width:900px;margin:0 auto;padding:16px 14px 40px}
+  .nav{font-size:13.5px;color:var(--sub);margin-bottom:10px}
+  .nav a{color:#1f6feb;text-decoration:none}
+  .nav a:hover{text-decoration:underline}
+  .nav .sep{color:#c3cfd6;margin:0 7px}
+  .nav .cur{color:var(--ink);font-weight:700}
+  h1{font-size:20px;margin:0 0 12px}
+  h2{font-size:15px;margin:0 0 9px}
+  h2 .tag{font-size:12.5px;font-weight:400;color:var(--sub);margin-left:6px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:12px}
+
+  /* ---- 数码管 + 旋钮（照设备：三行从上到下 重量/时长/循环，旋钮在数码管右边） ---- */
+  .dials{display:flex;flex-direction:column;gap:9px}
+  .dial{display:flex;align-items:center;gap:9px;padding:9px 13px;
+    border:1px solid var(--line);border-radius:10px;background:#fbfdfe}
+  .dial .lb{font-size:13px;color:var(--sub);width:30px}
+  .seg{width:100px;padding:5px 8px;border:2px solid #26333d;border-radius:6px;
+    background:#141a1f;color:#ff6a3d;font:700 23px/1.25 Consolas,"Courier New",monospace;
+    text-align:right;letter-spacing:1px}
+  .seg:focus{outline:2px solid #1f6feb;outline-offset:1px}
+  input[type=number]{-moz-appearance:textfield}
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .knob{display:flex;flex-direction:column;gap:3px}
+  .knob button{width:26px;height:17px;padding:0;font-size:10px;line-height:1;
+    color:#5b6b76;background:#fff;border:1px solid #c6d2da;border-radius:4px;cursor:pointer}
+  .knob button:active{background:#e3ebf0}
+  .dial .un{font-size:12.5px;color:var(--sub);width:36px}
+  .fixed{margin-top:11px;font-size:13.5px;color:var(--sub)}
+  .fixed b{color:var(--ink);font-size:16px}
+
+  /* ---- 结果行 ---- */
+  .rows{display:flex;flex-direction:column}
+  .r{display:flex;align-items:baseline;gap:10px;padding:7px 0;border-bottom:1px dashed #e7edf1}
+  .r:last-child{border-bottom:0}
+  .r .k{flex:0 0 108px;font-size:13.5px;color:var(--sub)}
+  .r .v{font-size:17px;font-weight:700;white-space:nowrap}
+  .r .v small{font-size:13px;font-weight:400;color:var(--sub);margin-left:3px}
+  .r .x{font-size:13px;color:var(--sub)}
+  .err{color:var(--bad);font-size:13.5px;line-height:1.7;margin-top:6px}
+  .err b{color:var(--bad)}
+
+  /* ---- 现场校准 ---- */
+  .cal{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end}
+  .fld label{display:block;font-size:12px;color:var(--sub);margin-bottom:4px}
+  .fld input[type=number]{padding:7px 9px;border:1px solid var(--line);border-radius:8px;font-size:16px;width:88px}
+  .ex{font-size:12.5px;color:var(--sub);padding-bottom:9px}
+  .ex button{border:1px solid var(--line);background:#fff;border-radius:6px;
+    padding:3px 9px;font-size:12.5px;cursor:pointer;margin-left:5px}
+  .ex button:hover{border-color:#9fc0d8;background:#f5fafd}
+  .big{background:#fcfffd;border:2px solid #2f8f5b;border-radius:10px;padding:12px 15px;margin-top:12px}
+  .big h3{margin:0 0 4px;font-size:13px;font-weight:400;color:#1c6b45}
+  .big .num{font-size:33px;font-weight:700;line-height:1.15}
+  .big .num small{font-size:16px;font-weight:400;color:var(--sub);margin-left:4px}
+  .big .sub2{font-size:13px;color:var(--sub);margin-top:3px}
+  .big.warn{border-color:#b6c6cf;background:#fafcfd}
+  .big.warn h3{color:#42525c}
+  .ok{color:var(--ok)}
+  .bad{color:var(--bad)}
+  .chip{display:inline-block;border-radius:6px;padding:1px 7px;font-size:12.5px;font-weight:700}
+  .chip.g{background:#e8f6ee;color:var(--ok)}
+  .chip.r{background:#fdecea;color:var(--bad)}
+  table{width:100%;border-collapse:collapse;font-size:14px;margin-top:8px}
+  th,td{border:1px solid var(--line);padding:6px 8px;text-align:center}
+  th{background:#f6fafc;color:var(--sub);font-weight:400;font-size:12.5px}
+  td b{font-size:16px}
+  tr.hi td{background:#f1fbf6}
+  .note{font-size:12.5px;color:var(--sub);margin-top:7px}
+  .tip{font-size:13px;color:#8a5a12;background:#fffaef;border:1px solid #f0dfb8;
+    border-radius:8px;padding:7px 10px;margin-top:10px}
+  .tip b{color:#7a4d06}
+
+  .phead{display:none}
+
+  @page{size:A4 portrait;margin:0}
+  @media print{
+    body{background:#fff;font-size:11pt;padding:12mm}
+    .wrap{max-width:none;padding:0;margin:0}
+    .noprint{display:none!important}
+    .card{border-color:#bbb;break-inside:avoid;page-break-inside:avoid;padding:6px 10px;margin-bottom:8px}
+    h1{display:none}
+    h2{font-size:12pt;margin-bottom:4px}
+    h2 .tag{font-size:9pt}
+    .phead{display:flex;justify-content:space-between;align-items:baseline;
+      border-bottom:2px solid #16232c;padding-bottom:3px;margin-bottom:8px}
+    .phead .t{font-size:14pt;font-weight:700}
+    .phead .m{font-size:10pt;color:#42525c}
+    .dial{padding:4px 9px}
+    .seg{background:#fff;color:#16232c;border-color:#8b9aa5;width:76px;font-size:14pt;padding:2px 6px}
+    .dial .lb,.dial .un{font-size:9pt}
+    .knob{display:none}
+    .fixed{margin-top:6px;font-size:9.5pt}
+    .r{padding:3px 0}
+    .r .k{font-size:10pt;flex-basis:96px}
+    .r .v{font-size:12.5pt}
+    .r .x{font-size:9.5pt}
+    .big{margin-top:7px;padding:7px 10px;border-width:1.5px}
+    .big .num{font-size:21pt}
+    .big .sub2,.note{font-size:9.5pt}
+    table{font-size:10.5pt}
+    th,td{padding:3px 6px}
+    td b{font-size:12pt}
+    .tip{font-size:9.5pt;padding:4px 7px}
+    .fld input[type=number]{width:70px;font-size:12pt}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="nav noprint">
+  <a href="index.html">首页</a><span class="sep">·</span>
+  <a href="pipe.html">管道用量与布置</a><span class="sep">·</span>
+  <span class="cur">投料计算</span>
+</div>
+
+<h1>万屿达投料机 · 投料计算</h1>
+
+<div class="card phead" id="phead"></div>
+
+<!-- ① 数码管设定 -->
+<div class="card">
+  <h2>数码管设定 <span class="tag">设备是纯定时：按「重量 ÷ 17 克/秒」算出总下料秒数，平均摊到每次循环里</span></h2>
+  <div class="dials" id="dials"></div>
+  <div class="fixed">下料速度 <b>17</b> 克/秒 <span class="noprint">（设备里的固定值，不可改）</span>　·　旋钮最小一档：重量 0.1 kg · 时长 1 分钟 · 循环 5 秒</div>
+</div>
+
+<!-- ② 机器怎么算 -->
+<div class="card">
+  <h2>机器会怎么下料 <span class="tag">按当前设定值算出来的结果</span></h2>
+  <div class="rows" id="mBody"></div>
+</div>
+
+<!-- ③ 现场校准 -->
+<div class="card">
+  <h2>现场校准 <span class="tag">料投完了就把实际用的分钟数填进来，反算重量该拧多少</span></h2>
+  <div class="cal noprint">
+    <div class="fld">
+      <label>实际投完时长（分钟）</label>
+      <input type="number" id="inTa" value="40" min="0" step="1">
+    </div>
+    <div class="fld">
+      <label>实际投料（kg）</label>
+      <input type="number" id="inWa" value="10" min="0" step="0.1">
+    </div>
+    <div class="ex">示例
+      <button type="button" data-ta="40">40 分钟</button>
+      <button type="button" data-ta="60">60 分钟</button>
+      <button type="button" data-ta="80">80 分钟</button>
+    </div>
+  </div>
+  <div id="cBody"></div>
+</div>
+
+</div>
+
+<script>
+/* ================= 模型 =================
+   设备（纯定时，不称重）：
+     下料次数 n      = 时长(分) × 60 ÷ 循环(秒)
+     总下料时长(秒)  = 重量(kg) × 1000 ÷ 17
+     每次下料时长    = 总下料时长 ÷ n        （剩下的时间是空档，等下一个循环）
+   现场（真实速度 v，与饲料/含水率有关）：
+     累计送料秒数    = 实际次数 × 每次下料时长 = 实际时长 × 60 ÷ 循环 × 每次下料时长
+     真实速度 v      = 实际重量 × 1000 ÷ 累计送料秒数
+   反算（时长、循环不动，只改重量显示值 W'）：
+     真实需要的送料秒数是定值 onAct = 实际重量 × 1000 ÷ v
+     机器算的送料秒数 = W' × 1000 ÷ 17，两者相等才投得完 →
+     W' = onAct × 17 × 时长 ÷ (目标时长 × 1000)
+   由此得到"照这个重量设，实际会投多久"：
+     实际时长(分) = onAct × 17 × 时长 ÷ (W' × 1000)
+   ========================================= */
+var RATE = 17;    // 克/秒，设备固定
+var TOL  = 0.10;  // 允许 ±10%
+var TG   = 60;    // 目标时长（分钟）
+var CFG  = { W:{v:10, min:0.1, step:0.1, lb:'重量', un:'kg'},
+             T:{v:60,  min:1,   step:1,   lb:'时长', un:'分钟'},
+             C:{v:120, min:5,   step:5,   lb:'循环', un:'秒'} };
+var last = {W:10, T:60, C:120};
+
+var $ = function(id){ return document.getElementById(id); };
+function f(x){ return x.toFixed(1); }              // 一位小数
+function fx(x){ return x.toFixed(2); }             // 两位小数
+function fn(x, dp){ return isFinite(x) ? (+x.toFixed(dp||2)).toString() : "—"; }  // 去掉多余的 0：30 而不是 30.00
+
+/* 机器视角 */
+function machine(W,T,C){
+  var n = T*60/C;
+  var onTotal = W*1000/RATE;
+  var onEach  = onTotal/n;
+  return {n:n, onTotal:onTotal, onEach:onEach, idle:C-onEach, duty:100*onEach/C};
+}
+/* 照 W' 这个重量设，实际会投多久（分钟） */
+function durOf(W, onAct, T){ return onAct*RATE*T/(W*1000); }
+/* 要投满 tg 分钟，重量该设多少 / 时长该设多少 */
+function wFor(onAct, T, tg){ return onAct*RATE*T/(tg*1000); }
+function tFor(onAct, W, tg){ return tg*W*1000/(onAct*RATE); }
+function mmss(sec){ var m=Math.floor(sec/60), s=sec-m*60; return "≈ "+m+" 分 "+s.toFixed(0)+" 秒"; }
+
+/* ---------------- 建数码管 + 旋钮 ---------------- */
+(function(){
+  var box = $("dials");
+  ["W","T","C"].forEach(function(k){
+    var c = CFG[k], d = document.createElement("div");
+    d.className = "dial";
+    d.innerHTML = '<div class="lb">'+c.lb+'</div>'
+      + '<input type="number" class="seg" id="in_'+k+'" min="'+c.min+'" step="'+c.step+'" value="'+c.v+'" inputmode="decimal">'
+      + '<div class="knob"><button type="button" data-k="'+k+'" data-d="1" title="加一档">▲</button>'
+      + '<button type="button" data-k="'+k+'" data-d="-1" title="减一档">▼</button></div>'
+      + '<div class="un">'+c.un+'</div>';
+    box.appendChild(d);
+  });
+})();
+function get(k){
+  var v = parseFloat($("in_"+k).value);
+  if(!isFinite(v)) v = last[k];
+  if(v < CFG[k].min) v = CFG[k].min;
+  return v;
+}
+function put(k, v){
+  last[k] = v;
+  $("in_"+k).value = (+v.toFixed(2)).toString();
+}
+
+/* ---------------- 渲染 ---------------- */
+function row(k, v, x){
+  return '<div class="r"><div class="k">'+k+'</div><div class="v">'+v+'</div><div class="x">'+x+'</div></div>';
+}
+function render(){
+  var W = get("W"), T = get("T"), C = get("C");
+  var m = machine(W,T,C);
+
+  /* ② 机器怎么算 */
+  if(!(W>0 && T>0 && C>0)){
+    $("mBody").innerHTML = '<div class="err">请填有效的重量、时长、循环（都要大于 0）。</div>';
+  }else{
+    var warn = "";
+    if(m.onEach >= C) warn = '<div class="err"><b>设置不合理：</b>每次下料 '+f(m.onEach)
+      +' 秒 已经 ≥ 循环 '+C+' 秒，这一轮喂不完。把循环调大，或把重量 / 时长调小。</div>';
+    else if(m.n < 1) warn = '<div class="err"><b>设置不合理：</b>总时长只有 '+T
+      +' 分钟（'+fx(m.n)+' 个循环），连一次下料都不够。把时长调大。</div>';
+    $("mBody").innerHTML =
+        row('下料次数',   fn(m.n)+'<small>次</small>', '总时长 '+T+' 分钟 ÷ 循环 '+C+' 秒')
+      + row('总下料时长', f(m.onTotal)+'<small>秒</small>', '重量 '+fn(W)+' kg × 1000 ÷ '+RATE+' 克/秒　'+mmss(m.onTotal))
+      + row('每次下料',   f(m.onEach)+'<small>秒</small>', '空档 '+f(m.idle)+' 秒（等下一个循环）　占空比 '+f(m.duty)+'%')
+      + row('投料密度',   Math.round(W*1000/T)+'<small>克/分钟</small>', '每小时 '+(W*1000/T*60/1000).toFixed(1)+' 公斤')
+      + warn;
+  }
+
+  /* ③ 现场校准 */
+  var Ta = parseFloat($("inTa").value), Wa = parseFloat($("inWa").value);
+  if(!(W>0 && T>0 && C>0) || m.onEach >= C){
+    $("cBody").innerHTML = '<div class="note">先把上面的设定改到合理（每次下料要小于循环），这里才能算。</div>';
+  }else if(!(Ta>0) || !(Wa>0)){
+    $("cBody").innerHTML = '<div class="note">填上「实际投完时长」和「实际投料」，这里会算出真实下料速度，和重量该拧多少。</div>';
+  }else{
+    /* 现场实际发生了什么 */
+    var nAct   = Ta*60/C;        // 实际跑了几次
+    var onAct  = nAct*m.onEach;   // 累计送料秒数（40 分钟里机器真正在转的秒数）
+    var v      = Wa*1000/onAct;  // 真实下料速度（送料时的速度）
+    var vAvg   = Wa*1000/(Ta*60);// 全程摊薄的速度（只在参考里出现）
+    var lo = TG*(1-TOL), hi = TG*(1+TOL);
+
+    /* 反算：只改重量 */
+    var wIdeal = wFor(onAct, T, TG);
+    var wUp    = Math.ceil((wIdeal-1e-9)*10)/10;          // 往大取整（宁可空转，别剩料）
+    var wDn    = Math.floor((wIdeal+1e-9)*10)/10;
+    var dUp = durOf(wUp,onAct,T), dDn = durOf(wDn,onAct,T);
+    var useUp = (dUp>=lo-1e-9 && dUp<=hi+1e-9) || !((dDn>=lo-1e-9 && dDn<=hi+1e-9));
+    var wRec = useUp ? wUp : wDn, dRec = useUp ? dUp : dDn;
+    var good = dRec>=lo-1e-9 && dRec<=hi+1e-9;
+    var wLo  = Math.ceil(wFor(onAct,T,hi)*10)/10;         // 投得最慢（重量最小）
+    var wHi  = Math.floor(wFor(onAct,T,lo)*10)/10;        // 投得最快（重量最大）
+    var bandOK = wLo <= wHi;                              // 0.1 一档里到底有没有落在合格区间的值
+    var bandTxt = bandOK
+      ? '重量可接受范围 <b>'+fn(wLo)+' ~ '+fn(wHi)+' kg</b>（重量拧越大投得越快，越小越慢）'
+      : '重量要落在 '+fx(wFor(onAct,T,hi))+' ~ '+fx(wFor(onAct,T,lo))
+        +' kg 才合格，但 0.1 一档凑不出来，只能同时动一下时长';
+
+    /* 反算：只改时长（重量不动） */
+    var tIdeal = tFor(onAct, W, TG), tRec = Math.ceil(tIdeal-1e-9);
+    var mT = machine(W, tRec, C);
+
+    /* 真实速度 vs 设定速度 */
+    var dev = v/RATE - 1;
+    var devTxt = Math.abs(dev)<0.05 ? "和设定基本一致"
+               : (dev>0 ? "比设定的 "+RATE+" 克/秒 <b class='bad'>快 "+Math.round(dev*100)+"%</b>"
+                        : "比设定的 "+RATE+" 克/秒 <b class='ok'>慢 "+Math.round(-dev*100)+"%</b>");
+
+    var h = "";
+    /* 真实速度 */
+    h += '<div class="big"><h3>这批料的真实下料速度（按送料秒数算）</h3>'
+       + '<div class="num">'+fn(v,2)+'<small>克/秒</small></div>'
+       + '<div class="sub2">'+devTxt+'　·　'+fn(Wa)+' kg 用了 '+f(onAct)+' 秒送料，摊在 '+fn(Ta)
+       + ' 分钟里（'+fn(nAct)+' 次）　·　若按全程摊薄算是 '+fn(vAvg,2)+' 克/秒（含空档，只作参考）</div></div>';
+    /* 推荐重量 */
+    if(good){
+      h += '<div class="big"><h3>要让这批料 '+TG+' 分钟投完，重量数码管改成</h3>'
+         + '<div class="num">'+fn(wRec)+'<small>kg　（理论 '+fx(wIdeal)+' kg，按 0.1 一档取 '
+         + (useUp?"大":"小")+'）</small></div>'
+         + '<div class="sub2">照这个设，实际会投 '+f(dRec)+' 分钟 '
+         + '<span class="chip g">合格（'+lo+' ~ '+hi+' 分钟）</span>　·　每次下料 '
+         + f((wRec*1000/RATE)/(T*60/C))+' 秒，仍要小于循环 '+C+' 秒</div></div>';
+    }else{
+      h += '<div class="big warn"><h3>要让这批料 '+TG+' 分钟投完，重量数码管改成</h3>'
+         + '<div class="num">'+fn(wRec)+'<small>kg　（理论 '+fx(wIdeal)+' kg）</small></div>'
+         + '<div class="sub2">照这个设，实际约 '+f(dRec)+' 分钟，<span class="chip r">'
+         + (dRec<lo ? '偏短（'+lo+' 分钟就投完了）' : '偏长（要超过 '+hi+' 分钟）')
+         + '</span>　0.1 kg 一档的误差在这个速度下比较敏感，可考虑同时调一下时长。</div></div>';
+    }
+    /* 可接受范围 + 备选 */
+    h += '<div class="note" style="margin-top:10px">'
+       + bandTxt + '；'
+       + '想留着原来的 '+fn(W)+' kg 也可以改时长：<b>时长设 '+tRec+' 分钟</b>，重量不动，'
+       + '这样变成 '+fn(mT.n)+' 次 × 每次 '+f(mT.onEach)+' 秒，同样是 '+TG+' 分钟投完。</div>';
+    /* 对照表 */
+    var tr = "";
+    [lo, TG, hi].forEach(function(tg){
+      var w = Math.ceil(wFor(onAct,T,tg)*10)/10;
+      var e = (w*1000/RATE)/(T*60/C);
+      tr += '<tr'+(Math.abs(tg-TG)<1e-9?' class="hi"':'')+'><td>'+(tg===TG?'<b>':'')+tg+' 分钟'
+          + (Math.abs(tg-TG)<1e-9?'（目标）':'')+(tg===TG?'</b>':'')+'</td><td><b>'+fn(w)+' kg</b></td>'
+          + '<td>'+f(e)+' 秒</td><td>'+Math.ceil(tFor(onAct,W,tg)-1e-9)+' 分钟</td></tr>';
+    });
+    h += '<table><tr><th>想让这批料</th><th>重量设成</th><th>每次下料</th>'
+       + '<th>重量不动，改时长</th></tr>'+tr+'</table>'
+       + '<div class="note">重量列按 0.1 一档向上取（宁可最后空转几秒，也不要剩料在仓里）。'
+       + '改时长时，下料次数也跟着变。</div>';
+    /* 提示 */
+    var hint = useUp
+      ? '重量已经往大取了一档：这样 '+fn(m.n)+' 次都能跑完，最后可能空转几秒，比剩料强。'
+      : '往大取会超出 '+lo+'~'+hi+' 分钟，所以只能往小取：机器会提前停，仓里会剩一点料，下次记得按实际投的重量填。';
+    h += '<div class="tip"><b>怎么拧：</b>把重量从 '+fn(W)+' kg 改成 <b>'+fn(wRec)+' kg</b>，'
+       + '时长 '+T+' 分钟、循环 '+C+' 秒都不动。' + hint + '</div>';
+    $("cBody").innerHTML = h;
+  }
+
+  /* 打印抬头 */
+  var d = new Date(), p2 = function(x){ return ("0"+x).slice(-2); };
+  $("phead").innerHTML = '<div class="t">万屿达投料机 · 投料计算单</div>'
+    + '<div class="m">'+d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate())
+    + '　使用人：____________　饲料：____________</div>';
+}
+
+/* ---------------- 事件 ---------------- */
+/* 注意：render() 只读不写输入框，避免打字时把 "10." 之类改掉；
+   只有失焦或按旋钮才把值规范化写回去 */
+["W","T","C"].forEach(function(k){
+  $("in_"+k).addEventListener("input", render);
+  $("in_"+k).addEventListener("blur", function(){ put(k, get(k)); render(); });
+});
+$("dials").addEventListener("click", function(e){
+  var b = e.target.closest ? e.target.closest("button[data-k]") : null;
+  if(!b) return;
+  var k = b.dataset.k, d = +b.dataset.d, c = CFG[k];
+  var v = get(k) + d*c.step;
+  put(k, Math.max(c.min, +v.toFixed(2)));
+  render();
+});
+$("inTa").addEventListener("input", render);
+$("inWa").addEventListener("input", render);
+document.querySelectorAll(".ex button").forEach(function(b){
+  b.addEventListener("click", function(){ $("inTa").value = b.dataset.ta; render(); });
+});
+render();
+</script>
+</body>
+</html>
